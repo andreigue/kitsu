@@ -704,7 +704,7 @@ export default {
       isObjectBackground: false,
       isAnnotationsDisplayed: true,
       isEnvironmentSkybox: false,
-      isCommentsHidden: true,
+      isCommentsHidden: false,
       isComparing: false,
       isDrawing: false,
       isHd: false,

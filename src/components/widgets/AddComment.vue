@@ -442,6 +442,10 @@ export default {
     previewForms: {
       type: Array,
       default: () => []
+    },
+    player: {
+      type: Object,
+      default: null
     }
   },
 
@@ -642,6 +646,16 @@ export default {
         checklist = []
       } else {
         checklist = checklist.filter(item => item.text.length)
+      }
+      // Auto-add @frame if user drew something but didn't manually add @frame
+      if (this.player && text && !text.includes('@frame')) {
+        const hasDrawings =
+          this.player.fabricCanvas &&
+          this.player.fabricCanvas.getObjects().length > 0
+
+        if (hasDrawings) {
+          text = '@frame ' + text
+        }
       }
       text = replaceTimeWithTimecode(text, this.revision, this.time, this.fps)
 

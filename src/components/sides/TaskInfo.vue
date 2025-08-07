@@ -171,6 +171,7 @@
                   :frame="currentFrame || currentFrameRaw"
                   :revision="currentRevision"
                   :is-movie="isMoviePreview"
+                  :player="player"
                   @add-comment="addComment"
                   @add-preview="onAddPreviewClicked"
                   @file-drop="selectFile"
