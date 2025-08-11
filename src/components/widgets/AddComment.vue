@@ -654,10 +654,22 @@ export default {
           this.player.fabricCanvas.getObjects().length > 0
 
         if (hasDrawings) {
+          // Use the standard @frame marker that gets converted by replaceTimeWithTimecode
           text = '@frame ' + text
         }
       }
-      text = replaceTimeWithTimecode(text, this.revision, this.time, this.fps)
+
+      // Use player's current frame if available, fallback to this.time
+      const currentFrame = this.player
+        ? (this.player.currentFrame || 0) + 1
+        : this.frame
+
+      text = replaceTimeWithTimecode(
+        text,
+        this.revision,
+        currentFrame,
+        this.fps
+      )
 
       revision = Number(revision)
       if (isNaN(revision) || revision < 1) {

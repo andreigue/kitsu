@@ -358,7 +358,7 @@ import PreviewPlayer from '@/components/previews/PreviewPlayer.vue'
 import Spinner from '@/components/widgets/Spinner.vue'
 import TaskTypeName from '@/components/widgets/TaskTypeName.vue'
 
-const DEFAULT_PANEL_WIDTH = 400
+const DEFAULT_PANEL_WIDTH = 800
 
 export default {
   name: 'task-info',
