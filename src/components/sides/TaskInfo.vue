@@ -184,7 +184,9 @@
                 <div
                   class="comments"
                   v-if="
-                    taskComments && taskComments.length > 0 && !loading.task
+                    filteredTaskComments &&
+                    filteredTaskComments.length > 0 &&
+                    !loading.task
                   "
                 >
                   <XyzTransitionGroup
@@ -225,7 +227,7 @@
                       @delete-comment="onDeleteComment"
                       @checklist-updated="saveComment"
                       @time-code-clicked="timeCodeClicked"
-                      v-for="(comment, index) in taskComments"
+                      v-for="(comment, index) in filteredTaskComments"
                     />
                   </XyzTransitionGroup>
                 </div>
@@ -683,6 +685,31 @@ export default {
         : this.currentPreview
           ? this.currentPreview.revision
           : 0
+    },
+
+    filteredTaskComments() {
+      if (!this.taskComments || this.taskComments.length === 0) {
+        return []
+      }
+
+      const currentRev = this.currentRevision
+
+      return this.taskComments.filter(comment => {
+        // Import the TIME_CODE_REGEX pattern from render.js
+        const timeCodeRegex = /v(\d+) (\d+:)?(\d+):(\d+)(\.|:)(\d+) \((\d+)\)/g
+        const matches = [...comment.text.matchAll(timeCodeRegex)]
+
+        // If comment has no version timestamps, show it (general comments)
+        if (matches.length === 0) {
+          return true
+        }
+
+        // Check if any version timestamp matches current revision
+        return matches.some(match => {
+          const commentRevision = parseInt(match[1]) // Extract version number
+          return commentRevision === currentRev
+        })
+      })
     },
 
     extension() {

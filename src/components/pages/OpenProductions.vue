@@ -1,5 +1,18 @@
 <template>
   <div class="open-productions page">
+    <!-- VERSION BANNER -->
+    <div
+      style="
+        background: #9c27b0;
+        color: white;
+        padding: 8px;
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 10px;
+      "
+    >
+      🎯 v5.0 - VERSION-SPECIFIC COMMENT FILTERING ACTIVE 🎯
+    </div>
     <div class="social-contributions" v-if="isContributions">
       <h1 class="subtitle has-text-centered">
         {{ $t('intro.title') }}
