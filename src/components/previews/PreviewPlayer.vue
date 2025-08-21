@@ -1854,6 +1854,193 @@ export default {
       return files
     },
 
+    async generateAnnotationPDF(shotId, versionId, taskComments = []) {
+      try {
+        // Import jsPDF dynamically to avoid bundle bloat
+        const { jsPDF } = await import('jspdf')
+        
+        const pdf = new jsPDF('p', 'mm', 'a4')
+        const pageWidth = pdf.internal.pageSize.getWidth()
+        const pageHeight = pdf.internal.pageSize.getHeight()
+        
+        // Get annotations sorted by frame
+        const annotations = this.annotations.sort((a, b) => {
+          return parseInt(a.frame) - parseInt(b.frame)
+        })
+        
+        for (let i = 0; i < annotations.length; i++) {
+          const annotation = annotations[i]
+          
+          // Start new page for each frame (except first page)
+          if (i > 0) {
+            pdf.addPage()
+          }
+          
+          let currentY = 20
+          
+          // Add frame header
+          const frameText = `Frame ${annotation.frame} (${this.formatTime(annotation.time)})`
+          pdf.setFontSize(16)
+          pdf.setFont('helvetica', 'bold')
+          pdf.text(frameText, 20, currentY)
+          currentY += 12
+          
+          // Extract frame with annotation
+          const canvas = document.getElementById('annotation-snapshot')
+          const frame = roundToFrame(annotation.time, this.fps) / this.frameDuration
+          await this.extractVideoFrame(canvas, frame)
+          await this.copyAnnotationCanvas(canvas, annotation)
+          
+          // Convert canvas to image data
+          const imageData = canvas.toDataURL('image/png')
+          
+          // Keep original dimensions - just scale to fit page width with margins
+          const maxWidth = pageWidth - 40
+          const aspectRatio = canvas.height / canvas.width
+          const imgWidth = maxWidth
+          const imgHeight = maxWidth * aspectRatio
+          
+          // Add frame image with annotation
+          pdf.addImage(imageData, 'PNG', 20, currentY, imgWidth, imgHeight)
+          currentY += imgHeight + 15
+          
+          // Get comments that reference this frame
+          const frameComments = this.getCommentsForFrame(annotation.frame, taskComments)
+          
+          // Debug logging
+          console.log(`Frame ${annotation.frame}: Found ${frameComments.length} comments`)
+          console.log('All task comments:', taskComments)
+          console.log('Frame comments:', frameComments)
+          
+          // Add frame comments
+          if (frameComments.length > 0) {
+            pdf.setFontSize(14)
+            pdf.setFont('helvetica', 'bold')
+            pdf.text('Comments:', 20, currentY)
+            currentY += 10
+            
+            pdf.setFontSize(11)
+            pdf.setFont('helvetica', 'normal')
+            
+            frameComments.forEach(comment => {
+              // Add comment header (person + date)
+              const commentHeader = `${comment.person?.name || 'Unknown'} - ${this.formatCommentDate(comment.created_at)}`
+              pdf.setFont('helvetica', 'bold')
+              pdf.text(commentHeader, 20, currentY)
+              currentY += 6
+              
+              // Add comment text
+              pdf.setFont('helvetica', 'normal')
+              if (comment.text) {
+                const lines = pdf.splitTextToSize(comment.text, pageWidth - 40)
+                pdf.text(lines, 25, currentY)
+                currentY += lines.length * 5 + 5
+              }
+              
+              // Add checklist items if any
+              if (comment.checklist && comment.checklist.length > 0) {
+                comment.checklist.forEach(item => {
+                  const checkText = `[${item.checked ? '✓' : '□'}] ${item.text}`
+                  const lines = pdf.splitTextToSize(checkText, pageWidth - 50)
+                  pdf.text(lines, 30, currentY)
+                  currentY += lines.length * 5 + 2
+                })
+                currentY += 5
+              }
+              
+              currentY += 5 // Space between comments
+            })
+          }
+          
+          // Add page number
+          pdf.setFontSize(10)
+          pdf.setFont('helvetica', 'italic')
+          pdf.text(`Page ${i + 1} of ${annotations.length}`, pageWidth - 50, pageHeight - 20)
+        }
+        
+        // Add metadata
+        const filename = `shot_${shotId}_version_${versionId}_annotations.pdf`
+        pdf.save(filename)
+        
+        // Restore original frame
+        this.previewViewer.setCurrentFrame(this.currentFrame - 1)
+        this.$nextTick(() => {
+          this.clearCanvas()
+        })
+        
+        return filename
+      } catch (error) {
+        console.error('Error generating PDF:', error)
+        throw error
+      }
+    },
+
+    extractAnnotationText(annotation) {
+      if (!annotation.drawing || !annotation.drawing.objects) return ''
+      
+      const textObjects = annotation.drawing.objects.filter(obj => 
+        obj.type === 'i-text' || obj.type === 'text'
+      )
+      
+      return textObjects.map(obj => obj.text).join(' ')
+    },
+
+    formatTime(seconds) {
+      const mins = Math.floor(seconds / 60)
+      const secs = Math.floor(seconds % 60)
+      return `${mins}:${secs.toString().padStart(2, '0')}`
+    },
+
+    getCommentsForFrame(frameNumber, taskComments) {
+      if (!taskComments || !Array.isArray(taskComments)) return []
+      
+      console.log(`Looking for comments for frame ${frameNumber}`)
+      console.log('Available comments:', taskComments)
+      
+      return taskComments.filter(comment => {
+        console.log('Checking comment:', comment)
+        
+        // Check if comment has a preview with frame info
+        if (comment.previews && comment.previews.length > 0) {
+          const hasFrame = comment.previews.some(preview => {
+            console.log('Preview frame:', preview.frame, 'vs looking for:', frameNumber)
+            return preview.frame === frameNumber || 
+                   preview.frame === frameNumber.toString() ||
+                   preview.frame === parseInt(frameNumber)
+          })
+          if (hasFrame) {
+            console.log('Found comment by preview frame match')
+            return true
+          }
+        }
+        
+        // Check if comment text contains frame reference
+        if (comment.text) {
+          const frameRef = new RegExp(`@frame\\s*${frameNumber}\\b`, 'i')
+          const hasFrameRef = frameRef.test(comment.text)
+          if (hasFrameRef) {
+            console.log('Found comment by @frame reference')
+            return true
+          }
+        }
+        
+        // Check if comment has a frame property directly
+        if (comment.frame === frameNumber || comment.frame === frameNumber.toString()) {
+          console.log('Found comment by direct frame property')
+          return true
+        }
+        
+        console.log('No frame match found for this comment')
+        return false
+      })
+    },
+
+    formatCommentDate(dateString) {
+      if (!dateString) return 'Unknown date'
+      const date = new Date(dateString)
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    },
+
     // Concepts
 
     entityPath(entity, section) {
