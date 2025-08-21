@@ -11,7 +11,7 @@
         margin-bottom: 10px;
       "
     >
-      🎯 v5.0 - VERSION-SPECIFIC COMMENT FILTERING ACTIVE 🎯
+      🎯 v9.0 - PDF Generation 🎯
     </div>
     <div class="social-contributions" v-if="isContributions">
       <h1 class="subtitle has-text-centered">

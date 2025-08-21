@@ -65,6 +65,7 @@ import soundOn from '@/assets/icons/fi-sound-on.svg'
 import soundOff from '@/assets/icons/fi-sound-off.svg'
 import laser from '@/assets/icons/fi-laser.svg'
 import waveform from '@/assets/icons/fi-waveform.svg'
+import pdf from '@/assets/icons/fi-pdf.svg'
 
 const icons = {
   'add-thumbnail': addThumbnail,
@@ -105,6 +106,7 @@ const icons = {
   'production-settings': productionSettings,
   quota,
   pen: annotations,
+  pdf,
   play,
   priority,
   refresh,

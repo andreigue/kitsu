@@ -834,6 +834,7 @@ export default {
     delete_tasks: 'Delete tasks',
     edit_concepts: 'Edit concept links',
     generate_playlist: 'Generate a playlist',
+    generate_pdf: 'Generate PDF with annotations',
     run_custom_action: 'Run custom action',
     set_estimations: 'Set estimations',
     set_thumbnails: 'Set thumbnails from last preview',
