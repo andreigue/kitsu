@@ -163,7 +163,7 @@
           }"
           :title="$t('menu.generate_pdf')"
           v-if="
-            (isCurrentViewShot) &&
+            isCurrentViewShot &&
             !isEntitySelection &&
             !isCurrentViewSingleEntity &&
             isTaskSelection &&
@@ -1563,7 +1563,7 @@ export default {
       } else {
         this.selectedBar = ''
       }
-      
+
       // Handle PDF generation
       if (barName === 'generate-pdf') {
         this.$emit('generate-pdf')
