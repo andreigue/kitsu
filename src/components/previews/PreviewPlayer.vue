@@ -2040,13 +2040,18 @@ export default {
 
         // Add general comments (not tied to specific frames) at the top
         const generalComments = versionComments.filter(comment => {
+          // Skip comments without text content (like status changes)
+          if (!comment.text || comment.text.trim() === '') {
+            return false
+          }
+
           // Check if comment has any frame reference
           const hasFrameRef =
-            comment.text &&
-            (comment.text.includes('@frame') ||
-              /\d+\)/.test(comment.text) || // Has frame number in parentheses
-              comment.frame ||
-              (comment.previews && comment.previews.some(p => p.frame)))
+            comment.text.includes('@frame') ||
+            /\d+\)/.test(comment.text) || // Has frame number in parentheses
+            comment.frame ||
+            (comment.previews && comment.previews.some(p => p.frame))
+
           return !hasFrameRef
         })
 
