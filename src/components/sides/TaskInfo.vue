@@ -889,9 +889,15 @@ export default {
 
         // Generate PDF using the preview player's method
         const shotId = selectedTask.entity_id
+        const shotName = selectedTask.entity_name || 'Unknown Shot' // Get the shot name
         const versionId = previewPlayer.currentPreview?.id || 'latest'
 
-        await previewPlayer.generateCommentsPDF(shotId, versionId, taskComments)
+        await previewPlayer.generateCommentsPDF(
+          shotId,
+          versionId,
+          taskComments,
+          shotName
+        )
 
         this.$notify({
           type: 'success',

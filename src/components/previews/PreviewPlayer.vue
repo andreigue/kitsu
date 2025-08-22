@@ -1985,7 +1985,12 @@ export default {
       }
     },
 
-    async generateCommentsPDF(shotId, versionId, taskComments = []) {
+    async generateCommentsPDF(
+      shotId,
+      versionId,
+      taskComments = [],
+      shotName = 'Unknown Shot'
+    ) {
       try {
         // Import jsPDF dynamically to avoid bundle bloat
         const { jsPDF } = await import('jspdf')
@@ -1993,6 +1998,16 @@ export default {
         const pdf = new jsPDF('p', 'mm', 'a4')
         const pageWidth = pdf.internal.pageSize.getWidth()
         const pageHeight = pdf.internal.pageSize.getHeight()
+
+        // Add shot title at the top of the first page
+        pdf.setFontSize(20)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text(shotName, 20, 20)
+
+        // Add a separator line under the title
+        pdf.setFontSize(12)
+        pdf.setFont('helvetica', 'normal')
+        pdf.text('─'.repeat(30), 20, 30)
 
         // Filter comments by current version
         const versionComments = taskComments.filter(comment => {
@@ -2030,12 +2045,12 @@ export default {
         })
 
         if (generalComments.length > 0) {
-          // Add general comments section at the top
+          // Add general comments section below the title
           pdf.setFontSize(16)
           pdf.setFont('helvetica', 'bold')
-          pdf.text('General Comments', 20, 20)
+          pdf.text('General Comments', 20, 50)
 
-          let currentY = 35
+          let currentY = 65
           pdf.setFontSize(11)
           pdf.setFont('helvetica', 'normal')
 
