@@ -2017,6 +2017,57 @@ export default {
           })
           .sort((a, b) => parseInt(a.frame) - parseInt(b.frame))
 
+        // Add general comments (not tied to specific frames) at the top
+        const generalComments = versionComments.filter(comment => {
+          // Check if comment has any frame reference
+          const hasFrameRef =
+            comment.text &&
+            (comment.text.includes('@frame') ||
+              /\d+\)/.test(comment.text) || // Has frame number in parentheses
+              comment.frame ||
+              (comment.previews && comment.previews.some(p => p.frame)))
+          return !hasFrameRef
+        })
+
+        if (generalComments.length > 0) {
+          // Add general comments section at the top
+          pdf.setFontSize(16)
+          pdf.setFont('helvetica', 'bold')
+          pdf.text('General Comments', 20, 20)
+
+          let currentY = 35
+          pdf.setFontSize(11)
+          pdf.setFont('helvetica', 'normal')
+
+          generalComments.forEach(comment => {
+            const commentHeader = `${comment.person?.name || 'Unknown'} - ${this.formatCommentDate(comment.created_at)}`
+            pdf.setFont('helvetica', 'bold')
+            pdf.text(commentHeader, 20, currentY)
+            currentY += 6
+
+            if (comment.text) {
+              pdf.setFont('helvetica', 'normal')
+              const lines = pdf.splitTextToSize(comment.text, pageWidth - 40)
+              pdf.text(lines, 25, currentY)
+              currentY += lines.length * 5 + 5
+            }
+
+            currentY += 5
+          })
+
+          // Add separator
+          currentY += 10
+          pdf.setFontSize(12)
+          pdf.setFont('helvetica', 'italic')
+          pdf.text('─'.repeat(20), 20, currentY)
+          currentY += 20
+
+          // Start frame pages after general comments
+          if (versionAnnotations.length > 0) {
+            pdf.addPage()
+          }
+        }
+
         // If we have annotations, use them as the primary source for frames
         if (versionAnnotations.length > 0) {
           for (let i = 0; i < versionAnnotations.length; i++) {
@@ -2029,8 +2080,8 @@ export default {
 
             let currentY = 20
 
-            // Add frame header with version info
-            const frameText = `Frame ${annotation.frame} (${this.formatSimpleTime(annotation.time)}) - Version ${versionId}`
+            // Add frame header
+            const frameText = `Frame ${annotation.frame} (${this.formatSimpleTime(annotation.time)})`
             pdf.setFontSize(16)
             pdf.setFont('helvetica', 'bold')
             pdf.text(frameText, 20, currentY)
@@ -2116,8 +2167,13 @@ export default {
             // Add page number
             pdf.setFontSize(10)
             pdf.setFont('helvetica', 'italic')
+            const pageNumber = generalComments.length > 0 ? i + 2 : i + 1 // +2 because page 1 is general comments, page 2+ are frames
+            const totalPages =
+              generalComments.length > 0
+                ? versionAnnotations.length + 1
+                : versionAnnotations.length
             pdf.text(
-              `Page ${i + 1} of ${versionAnnotations.length}`,
+              `Page ${pageNumber} of ${totalPages}`,
               pageWidth - 50,
               pageHeight - 20
             )
