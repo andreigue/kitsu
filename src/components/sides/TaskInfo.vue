@@ -867,32 +867,32 @@ export default {
           console.warn('No tasks selected for PDF generation')
           return
         }
-        
+
         // Get the first selected task (we'll generate PDF for the first one)
         const selectedTask = Array.from(this.selectedTasks.values())[0]
-        
+
         // Find the preview player component
         const previewPlayer = this.$refs['preview-player']
         if (!previewPlayer) {
           console.error('Preview player not found')
           return
         }
-        
+
         // Load task comments if not already loaded
         await this.loadTaskComments({
           taskId: selectedTask.id,
           entityId: selectedTask.entity_id
         })
-        
+
         // Get the comments from the store
         const taskComments = this.getTaskComments(selectedTask.id) || []
-        
+
         // Generate PDF using the preview player's method
         const shotId = selectedTask.entity_id
         const versionId = previewPlayer.currentPreview?.id || 'latest'
-        
-        await previewPlayer.generateAnnotationPDF(shotId, versionId, taskComments)
-        
+
+        await previewPlayer.generateCommentsPDF(shotId, versionId, taskComments)
+
         this.$notify({
           type: 'success',
           title: 'PDF Generated',
