@@ -1989,7 +1989,8 @@ export default {
       shotId,
       versionId,
       taskComments = [],
-      shotName = 'Unknown Shot'
+      shotName = 'Unknown Shot',
+      versionName = 'latest'
     ) {
       try {
         // Import jsPDF dynamically to avoid bundle bloat
@@ -2004,10 +2005,15 @@ export default {
         pdf.setFont('helvetica', 'bold')
         pdf.text(shotName, 20, 20)
 
-        // Add a separator line under the title
+        // Add version info below the title
+        pdf.setFontSize(14)
+        pdf.setFont('helvetica', 'normal')
+        pdf.text(`Version: ${versionName}`, 20, 35)
+
+        // Add a separator line under the version
         pdf.setFontSize(12)
         pdf.setFont('helvetica', 'normal')
-        pdf.text('─'.repeat(30), 20, 30)
+        pdf.text('─'.repeat(30), 20, 45)
 
         // Filter comments by current version
         const versionComments = taskComments.filter(comment => {
@@ -2045,12 +2051,12 @@ export default {
         })
 
         if (generalComments.length > 0) {
-          // Add general comments section below the title
+          // Add general comments section below the title and version
           pdf.setFontSize(16)
           pdf.setFont('helvetica', 'bold')
-          pdf.text('General Comments', 20, 50)
+          pdf.text('General Comments', 20, 60)
 
-          let currentY = 65
+          let currentY = 75
           pdf.setFontSize(11)
           pdf.setFont('helvetica', 'normal')
 
@@ -2220,8 +2226,11 @@ export default {
           })
         }
 
-        // Add metadata
-        const filename = `shot_${shotId}_version_${versionId}_annotations_and_comments.pdf`
+        // Add metadata with readable filename
+        const cleanShotName = shotName
+          .replace(/[^a-zA-Z0-9\s/-_]/g, '_')
+          .replace(/\s+/g, '_')
+        const filename = `${cleanShotName}_${versionName}_annotations.pdf`
         pdf.save(filename)
 
         // Restore original frame

@@ -891,12 +891,16 @@ export default {
         const shotId = selectedTask.entity_id
         const shotName = selectedTask.entity_name || 'Unknown Shot' // Get the shot name
         const versionId = previewPlayer.currentPreview?.id || 'latest'
+        const versionName = previewPlayer.currentPreview?.revision
+          ? `v${previewPlayer.currentPreview.revision}`
+          : 'latest'
 
         await previewPlayer.generateCommentsPDF(
           shotId,
           versionId,
           taskComments,
-          shotName
+          shotName,
+          versionName
         )
 
         this.$notify({

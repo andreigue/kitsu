@@ -3,7 +3,7 @@
     <!-- VERSION BANNER -->
     <div
       style="
-        background: rgb(229, 82, 255);
+        background: rgb(151, 0, 178);
         color: white;
         padding: 8px;
         text-align: center;
