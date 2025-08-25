@@ -1938,9 +1938,37 @@ export default {
               // Add comment text
               pdf.setFont('helvetica', 'normal')
               if (comment.text) {
-                const lines = pdf.splitTextToSize(comment.text, pageWidth - 40)
-                pdf.text(lines, 25, currentY)
-                currentY += lines.length * 5 + 5
+                // Clean comment text by removing version and frame references
+                let cleanText = comment.text
+
+                console.log('Original comment text:', cleanText)
+
+                // Simple approach: find the second letter and remove everything to the left
+
+                // Find the position of the second letter (after the first letter)
+                let secondLetterPos = -1
+                for (let i = 1; i < cleanText.length; i++) {
+                  if (/[a-zA-Z]/.test(cleanText[i])) {
+                    secondLetterPos = i
+                    break
+                  }
+                }
+
+                // If we found a second letter, remove everything to the left of it
+                if (secondLetterPos > 0) {
+                  cleanText = cleanText.substring(secondLetterPos)
+                }
+
+                // Clean up extra whitespace
+                cleanText = cleanText.replace(/^\s+/, '').trim()
+
+                console.log('Original:', comment.text, 'Cleaned:', cleanText)
+
+                if (cleanText) {
+                  const lines = pdf.splitTextToSize(cleanText, pageWidth - 40)
+                  pdf.text(lines, 25, currentY)
+                  currentY += lines.length * 5 + 5
+                }
               }
 
               // Add checklist items if any
@@ -2167,12 +2195,31 @@ export default {
                 // Add comment text
                 pdf.setFont('helvetica', 'normal')
                 if (comment.text) {
-                  const lines = pdf.splitTextToSize(
-                    comment.text,
-                    pageWidth - 40
-                  )
-                  pdf.text(lines, 25, currentY)
-                  currentY += lines.length * 5 + 5
+                  // Clean comment text by removing version and frame references
+                  let cleanText = comment.text
+
+                  // Find the position of the second letter (after the first letter)
+                  let secondLetterPos = -1
+                  for (let i = 1; i < cleanText.length; i++) {
+                    if (/[a-zA-Z]/.test(cleanText[i])) {
+                      secondLetterPos = i
+                      break
+                    }
+                  }
+
+                  // If we found a second letter, remove everything to the left of it
+                  if (secondLetterPos > 0) {
+                    cleanText = cleanText.substring(secondLetterPos)
+                  }
+
+                  // Clean up extra whitespace
+                  cleanText = cleanText.replace(/^\s+/, '').trim()
+
+                  if (cleanText) {
+                    const lines = pdf.splitTextToSize(cleanText, pageWidth - 40)
+                    pdf.text(lines, 25, currentY)
+                    currentY += lines.length * 5 + 5
+                  }
                 }
 
                 // Add checklist items if any
