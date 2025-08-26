@@ -138,6 +138,22 @@
           v-if="form.notifications_discord_enabled === 'true'"
         />
 
+        <div class="field">
+          <combobox-boolean
+            :label="$t('profile.notifications_telegram_enabled')"
+            v-model="form.notifications_telegram_enabled"
+          />
+        </div>
+
+        <text-field
+          :label="$t('profile.notifications_telegram_chat_id')"
+          v-model="form.notifications_telegram_chat_id"
+          v-if="form.notifications_telegram_enabled === 'true'"
+          :placeholder="
+            $t('profile.notifications_telegram_chat_id_placeholder')
+          "
+        />
+
         <button
           :class="{
             button: true,
@@ -634,6 +650,8 @@ export default {
         notifications_mattermost_userid: '',
         notifications_discord_enabled: 'false',
         notifications_discord_userid: '',
+        notifications_telegram_enabled: 'false',
+        notifications_telegram_chat_id: '',
         email: '',
         phone: '',
         timezone: 'Europe/Paris',
