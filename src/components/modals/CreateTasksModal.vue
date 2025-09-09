@@ -21,7 +21,7 @@
               :to="{
                 name: 'production-settings',
                 params: {
-                  production_id: currentProduction.id
+                  production_id: currentProduction?.id
                 },
                 query: {
                   tab: 'taskTypes'
@@ -116,10 +116,6 @@ export default {
       type: Boolean,
       default: false
     },
-    isSuccess: {
-      type: Boolean,
-      default: false
-    },
     text: {
       type: String,
       default: ''
@@ -154,6 +150,7 @@ export default {
       'productionShotTaskTypes',
       'productionSequenceTaskTypes'
     ]),
+
     isAssetTasks() {
       return this.$route.path.includes('assets')
     },

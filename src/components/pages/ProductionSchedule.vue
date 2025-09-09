@@ -437,7 +437,11 @@
     :is-loading="loading.delete"
     :is-error="errors.deleteScheduleVersion"
     :lock-text="scheduleVersionToEdit?.name"
-    :text="$t('schedule.delete_version_message')"
+    :text="
+      $t('schedule.delete_version_message', {
+        name: scheduleVersionToEdit?.name
+      })
+    "
     @cancel="modals.deleteScheduleVersion = false"
     @confirm="deleteVersion(scheduleVersionToEdit)"
     v-if="modals.deleteScheduleVersion"
@@ -1863,6 +1867,7 @@ export default {
       if (!version.id) {
         const newVersion = await this.createScheduleVersion(version)
         this.version = newVersion.id
+        this.onVersionChanged(this.version)
       } else {
         await this.updateScheduleVersion(version)
       }

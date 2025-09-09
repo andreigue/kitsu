@@ -236,10 +236,8 @@
           v-if="
             !isEntitySelection &&
             isTaskSelection &&
-            !isCurrentViewEpisode &&
             !isCurrentViewConcept &&
-            customActions &&
-            customActions.length > 0
+            customActions?.length
           "
         ></div>
 
@@ -251,13 +249,10 @@
           :title="$t('menu.run_custom_action')"
           @click="selectBar('custom-actions')"
           v-if="
-            (isCurrentUserManager || isSupervisorInDepartment) &&
             !isEntitySelection &&
             isTaskSelection &&
-            !isCurrentViewEpisode &&
             !isCurrentViewConcept &&
-            customActions &&
-            customActions.length > 0
+            customActions?.length
           "
         >
           <play-circle-icon />
@@ -593,24 +588,22 @@
         </div>
 
         <div class="flexrow-item is-wide" v-if="selectedBar === 'delete-tasks'">
-          <div class="flexrow is-wide">
-            <button
-              class="button is-danger confirm-button is-wide"
-              :class="{
-                'is-loading': loading.taskDeletion
-              }"
-              @click="confirmTaskDeletion"
-            >
-              {{
-                $tc('tasks.delete_for_selection', nbSelectedTasks, {
-                  nbSelectedTasks
-                })
-              }}
-            </button>
-          </div>
-          <div class="flexrow-item error" v-if="errors.taskDeletion">
-            {{ $t('tasks.delete_error') }}
-          </div>
+          <delete-entities
+            :error-text="$t('tasks.delete_for_selection_error')"
+            :is-loading="loading.taskDeletion"
+            :is-error="errors.taskDeletion"
+            :require-hard-delete-confirmation="true"
+            :hard-delete-lock-text="
+              $t('tasks.delete_for_selection_hard_lock_text')
+            "
+            :hard-delete-text="$t('tasks.delete_for_selection_hard_text')"
+            :text="
+              $tc('tasks.delete_for_selection', nbSelectedTasks, {
+                nbSelectedTasks
+              })
+            "
+            @confirm="confirmTaskDeletion"
+          />
         </div>
 
         <div class="flexcolumn filler" v-if="selectedBar === 'custom-actions'">
@@ -704,6 +697,11 @@
                 nbSelectedAssets
               })
             "
+            :require-hard-delete-confirmation="allAssetsCanceled"
+            :hard-delete-lock-text="
+              $tc('assets.delete_for_selection_hard_lock_text')
+            "
+            :hard-delete-text="$tc('assets.delete_for_selection_hard_text')"
             @confirm="confirmAssetDeletion"
           />
         </div>
@@ -718,6 +716,11 @@
                 nbSelectedShots
               })
             "
+            :require-hard-delete-confirmation="allShotsCanceled"
+            :hard-delete-lock-text="
+              $t('shots.delete_for_selection_hard_lock_text')
+            "
+            :hard-delete-text="$t('shots.delete_for_selection_hard_text')"
             @confirm="confirmShotDeletion"
           />
         </div>
@@ -732,6 +735,11 @@
                 nbSelectedEdits
               })
             "
+            :require-hard-delete-confirmation="allEditsCanceled"
+            :hard-delete-lock-text="
+              $t('edits.delete_for_selection_hard_lock_text')
+            "
+            :hard-delete-text="$t('edits.delete_for_selection_hard_text')"
             @confirm="confirmEditDeletion"
           />
         </div>
@@ -749,6 +757,7 @@
                 nbSelectedEpisodes
               })
             "
+            :require-hard-delete-confirmation="true"
             @confirm="confirmEpisodeDeletion"
           />
         </div>
@@ -766,6 +775,11 @@
                 nbSelectedConcepts
               })
             "
+            :require-hard-delete-confirmation="true"
+            :hard-delete-lock-text="
+              $t('concepts.delete_for_selection_hard_lock_text')
+            "
+            :hard-delete-text="$t('concepts.delete_for_selection_hard_text')"
             @confirm="confirmConceptDeletion"
           />
         </div>
@@ -969,11 +983,10 @@ export default {
 
   computed: {
     ...mapGetters([
-      'allCustomActions',
       'assetMap',
-      'assetCustomActions',
       'assetsByType',
       'currentProduction',
+      'getCustomActionsByType',
       'isCurrentUserArtist',
       'isCurrentUserManager',
       'isCurrentUserSupervisor',
@@ -986,7 +999,6 @@ export default {
       'selectedEdits',
       'selectedShots',
       'selectedTasks',
-      'shotCustomActions',
       'taskMap',
       'taskStatusForCurrentUser',
       'taskTypeMap',
@@ -1042,11 +1054,7 @@ export default {
     },
 
     defaultCustomAction() {
-      if (this.customActions.length > 0) {
-        return this.customActions[0]
-      } else {
-        return {}
-      }
+      return this.customActions?.[0] ?? {}
     },
 
     isTaskSelection() {
@@ -1059,16 +1067,6 @@ export default {
         this.selectedShots.size > 0 ||
         this.selectedEdits.size > 0
       )
-    },
-
-    isAssigned() {
-      if (!this.isCurrentUserArtist) return
-      if (this.nbSelectedTasks === 0) return
-      const selectedTasks = Array.from(this.selectedTasks.values())
-      const isAssigned = selectedTasks.some(task => {
-        return task.assignees.includes(this.user.id)
-      })
-      return isAssigned
     },
 
     nbSelectedAssets() {
@@ -1085,6 +1083,25 @@ export default {
 
     nbSelectedConcepts() {
       return this.selectedConcepts.size
+    },
+
+    allAssetsCanceled() {
+      return Array.from(this.selectedAssets.values()).every(
+        asset => asset.canceled
+      )
+    },
+
+    allShotsCanceled() {
+      const allShotsCanceled = Array.from(this.selectedShots.values()).every(
+        shot => shot.canceled
+      )
+      return allShotsCanceled
+    },
+
+    allEditsCanceled() {
+      return Array.from(this.selectedEdits.values()).every(
+        edit => edit.canceled
+      )
     },
 
     isHidden() {
@@ -1150,10 +1167,6 @@ export default {
 
     isCurrentViewPerson() {
       return this.$route.path.includes('people/')
-    },
-
-    isCurrentViewPersonTasks() {
-      return this.$route.path.includes('todos')
     },
 
     isCurrentViewTaskType() {
@@ -1391,6 +1404,7 @@ export default {
       this.deleteSelectedTasks()
         .then(() => {
           this.loading.taskDeletion = false
+          this.clearSelectedTasks()
         })
         .catch(err => {
           console.error(err)
@@ -1696,26 +1710,28 @@ export default {
     nbSelectedTasks: {
       immediate: true,
       handler() {
-        this.selectedTaskIds = Array.from(this.selectedTasks.keys())
         if (this.nbSelectedTasks > 0) {
-          let isShotSelected = false
-          let isAssetSelected = false
           this.setAvailableStatuses()
-          this.selectedTaskIds.forEach(taskId => {
-            const task = this.selectedTasks.get(taskId)
-            if (task && task.sequence_name) {
-              isShotSelected = true
-            } else {
-              isAssetSelected = true
-            }
-          })
-          if (isShotSelected && isAssetSelected) {
-            this.customActions = this.allCustomActions
-          } else if (isShotSelected) {
-            this.customActions = this.shotCustomActions
-          } else {
-            this.customActions = this.assetCustomActions
+
+          const selectedTypes = {
+            Asset: false,
+            Shot: false,
+            Sequence: false,
+            Edit: false,
+            Episode: false
           }
+          this.selectedTasks.forEach(task => {
+            const type = this.taskTypeMap.get(task.task_type_id)
+            selectedTypes[type?.for_entity] = true
+          })
+
+          this.customActions = this.getCustomActionsByType(
+            selectedTypes.Asset,
+            selectedTypes.Shot,
+            selectedTypes.Sequence,
+            selectedTypes.Edit,
+            selectedTypes.Episode
+          )
 
           if (this.customActions.length > 0) {
             const isUrlSelected =
