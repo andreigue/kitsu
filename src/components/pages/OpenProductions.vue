@@ -185,7 +185,7 @@ export default {
 
   data() {
     return {
-      isContributions: true,
+      isContributions: false,
       filteredProductions: []
     }
   },

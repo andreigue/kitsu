@@ -5,6 +5,8 @@ export default {
     cancel_text: 'Are you sure you want to archive {name}?',
     delete_error: 'An error occurred while deleting this asset. There may be existing data currently linked to it. Are you sure this asset type has no task linked to it?',
     delete_for_selection: 'Delete the selected asset | Delete the {nbSelectedAssets} selected assets',
+    delete_for_selection_hard_text: 'Are you sure you want to permanently remove the selected assets? All related tasks, comments and previews will also be deleted. Please confirm by typing \'DELETE\' below.',
+    delete_for_selection_hard_lock_text: 'DELETE',
     delete_text: 'Are you sure you want to remove {name} from your database?',
     edit_fail: 'Saving failed. An asset with a similar name may already exist.',
     edit_success: 'Asset {name} successfully edited.',
@@ -89,7 +91,10 @@ export default {
   bots: {
     active_bots: 'active bot | active bots',
     bots: 'bot | bots',
+    confirm_edit: 'Save bot changes',
     copy_token_warning: 'Make sure you copy the token below. You will not be able to see it again.',
+    create: 'Create bot',
+    departments_empty: 'This bot isn\'t linked to any department.',
     edit_avatar_error: 'An error occurred while updating the bot avatar.',
     edit_title: 'Edit bot',
     new_bot: 'Add a new bot',
@@ -150,7 +155,7 @@ export default {
     delete_budget_entry_error: 'An error occurred while deleting this budget entry. Please contact our support team.',
     delete_budget_entry_message: 'Are you sure you want to delete this budget entry?',
     delete_budget_error: 'An error occurred while deleting this budget. Please contact our support team.',
-    delete_budget_message: 'Are you sure you want to delete this budget? Type the budget name below to confirm.',
+    delete_budget_message: 'Are you sure you want to delete the budget {name}? Please confirm by typing the budget name below.',
     difference: 'Difference',
     edit_budget: 'Edit current budget version',
     edit_budget_entry: 'Edit entry',
@@ -213,8 +218,10 @@ export default {
 
   comments: {
     add_attachment: 'Add attachment',
+    add_attachment_to_reply: 'Add attachment to reply',
     add_checklist: 'Add checklist',
     add_comment: 'Leave a comment...',
+    add_emoji: 'Add an emoji',
     add_link: 'Add a URL link',
     add_preview: 'Add preview revisions to publish',
     attachments: 'Attachments',
@@ -262,6 +269,8 @@ export default {
     add_concept: 'Add files for new concepts',
     add_concept_error: 'An error occurred while adding concepts.',
     delete_for_selection: 'Delete the selected concept | Delete the {nbSelectedConcepts} selected concepts',
+    delete_for_selection_hard_text: 'Are you sure you want to permanently remove the selected concepts? All related tasks, comments and previews will also be deleted. Please confirm by typing \'DELETE\' below.',
+    delete_for_selection_hard_lock_text: 'DELETE',
     empty: 'There are no concepts for this production',
     multiple_delete_error: 'An error occurred while deleting a concept. There may be existing data currently linked to it. Are you sure there is no task linked to a selected concept?',
     no_concept_selected: 'No concept selected',
@@ -296,8 +305,11 @@ export default {
     },
     entity_types: {
       all: 'All',
+      asset: 'Asset',
       shot: 'Shot',
-      asset: 'Asset'
+      sequence: 'Sequence',
+      edit: 'Edit',
+      episode: 'Episode',
     }
   },
 
@@ -489,6 +501,11 @@ export default {
       'standby': 'Stand By',
       'running': 'Running'
     }
+  },
+
+  hard_delete: {
+    delete_for_selection_hard_text: 'Are you sure you want to permanently remove the selected items? Please confirm by typing \'DELETE\' below.',
+    delete_for_selection_hard_lock_text: 'DELETE',
   },
 
   hardware_items: {
@@ -1467,6 +1484,9 @@ export default {
     delete_text: 'Are you sure you want to remove {name} from your database?',
     delete_error: 'An error occurred while deleting this edit. There may be existing data currently linked to it.',
     delete_for_selection: 'Delete the selected edit | Delete the {nbSelectedEdits} selected edits',
+    delete_for_selection_error: 'An error occurred while deleting the selected edits.',
+    delete_for_selection_hard_text: 'Are you sure you want to permanently remove the selected edits? All related tasks, comments and previews will also be deleted. Please confirm by typing \'DELETE\' below.',
+    delete_for_selection_hard_lock_text: 'DELETE',
     edit_error: 'An error occurred while saving this edit. Are you sure there is no edit with a similar name?',
     edit_success: 'Modifications were saved successfully.',
     edit_title: 'Change edit',
@@ -1475,6 +1495,7 @@ export default {
     new_edit: 'New edit',
     history: 'Edit values history',
     number: 'edit | edits',
+    multiple_delete_error: 'An error occurred while deleting an edit. There may be existing data currently linked to it. Are you sure there are no tasks linked to a selected edit?',
     restore_text: 'Are you sure you want to restore {name} from your archive?',
     restore_error: 'An error occurred while restoring this edit.',
     tasks: 'Tasks',
@@ -1525,7 +1546,7 @@ export default {
     edit_version_exist: 'A version with a similar name already exist.',
     delete_version: 'Delete schedule version',
     delete_version_error: 'An error occurred while deleting this schedule version. Please contact our support team.',
-    delete_version_message: 'Are you sure you want to delete this schedule version? Type the version name below to confirm.',
+    delete_version_message: 'Are you sure you want to delete the schedule version {name}? Please confirm by typing the schedule version name below.',
     versions: {
       reference: 'Reference forecast',
       from: 'from',
@@ -1591,6 +1612,8 @@ export default {
     delete_text: 'Are you sure you want to remove {name} from your database?',
     delete_error: 'An error occurred while deleting this shot. There may be existing data currently linked to it. Are you sure this shot has no task linked to it?',
     edit_success: 'Shot {name} successfully edited.',
+    delete_for_selection_hard_text: 'Are you sure you want to permanently remove the selected shots? All related tasks, comments and previews will also be deleted. Please confirm by typing \'DELETE\' below.',
+    delete_for_selection_hard_lock_text: 'DELETE',
     edit_fail: 'Creation or edit failed, an error occurred. Make sure that you are not renaming the shot with a name already listed for a given sequence.',
     edit_title: 'Edit shot',
     empty_list: 'There are no shots in the production. How about creating some?',
@@ -1710,6 +1733,9 @@ export default {
     delete_comment: 'Are you sure you want to delete comments?',
     delete_comment_error: 'An error occurred while deleting comments.',
     delete_for_selection: 'Delete the selected task | Delete the {nbSelectedTasks} selected tasks',
+    delete_for_selection_error: 'An error occurred while deleting the selected tasks.',
+    delete_for_selection_hard_text: 'Are you sure you want to permanently remove the selected tasks? All related comments and previews will also be deleted. Please confirm by typing \'DELETE\' below.',
+    delete_for_selection_hard_lock_text: 'DELETE',
     delete_preview: 'Are you sure you want to delete this preview?',
     delete_preview_error: 'An error occurred while deleting preview.',
     done: 'Done',

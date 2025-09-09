@@ -498,8 +498,7 @@ export default {
         editLabel: false,
         importing: false,
         importingError: null,
-        remove: false,
-        stay: false
+        remove: false
       },
       loading: {
         edit: false,
@@ -700,10 +699,6 @@ export default {
       return castingAssetTypes.sort()
     },
 
-    editLabelModal() {
-      return this.$refs['edit-label-modal']
-    },
-
     filteredCasting() {
       const casting = {}
       this.castingEntities.forEach(entity => {
@@ -829,8 +824,8 @@ export default {
         if (this.assetTypeId) {
           this.setCastingAssetType(this.assetTypeId)
         } else if (
-          this.episodeId &&
-          !['main', 'all'].includes(this.episodeId)
+          !this.isTVShow ||
+          (this.episodeId && !['main', 'all'].includes(this.episodeId))
         ) {
           this.setCastingSequence(this.sequenceId || 'all')
         }
@@ -1308,8 +1303,8 @@ export default {
     },
 
     descriptorCurrentDepartments(descriptor) {
-      const departemts = descriptor.departments || []
-      return departemts.map(departmentId =>
+      const departments = descriptor.departments || []
+      return departments.map(departmentId =>
         this.departmentMap.get(departmentId)
       )
     },
@@ -1654,10 +1649,8 @@ export default {
       this.$store.commit('CASTING_SET_SEQUENCES', this.displayedSequences)
     },
 
-    '$route.query.search'() {
-      this.setSearchFromUrl()
-      if (this.searchField) return
-      const search = this.searchField.getValue()
+    '$route.query.search'(search) {
+      this.searchField?.setValue(search)
       this.onSearchChange(search)
     }
   },

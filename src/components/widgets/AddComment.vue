@@ -39,9 +39,11 @@
       </div>
 
       <at-ta
-        :members="atOptions"
+        :ats="['#', '@']"
+        :members="[...membersForAts['@'], ...membersForAts['#']]"
         name-key="full_name"
         :limit="2"
+        :filter-match="atOptionsFilter"
         @update:value="onAtTextChanged"
         v-if="mode === 'status' || showCommentArea"
       >
@@ -60,6 +62,16 @@
               &nbsp;
             </span>
             {{ item.full_name }}
+          </template>
+          <template v-else-if="item.isTaskType">
+            <task-type-name
+              :task-type="{
+                color: item.color,
+                name: item.full_name
+              }"
+              :is-link="false"
+              thin
+            />
           </template>
           <template v-else>
             <div class="flexrow">
@@ -213,6 +225,7 @@
         </div>
 
         <div class="flexrow button-row mt1">
+          <emoji-button @select="onSelectEmoji" v-if="mode === 'status'" />
           <button-simple
             :class="{
               'flexrow-item': true,
@@ -349,7 +362,9 @@ import ButtonSimple from '@/components/widgets/ButtonSimple.vue'
 import Checklist from '@/components/widgets/Checklist.vue'
 import ComboboxStatus from '@/components/widgets/ComboboxStatus.vue'
 import ConfirmModal from '@/components/modals/ConfirmModal.vue'
+import EmojiButton from '@/components/widgets/EmojiButton.vue'
 import PeopleAvatar from '@/components/widgets/PeopleAvatar.vue'
+import TaskTypeName from '@/components/widgets/TaskTypeName.vue'
 
 const REVISION_NUMBER_REGEX = /v(\d+)/gi
 
@@ -363,7 +378,9 @@ export default {
     Checklist,
     ConfirmModal,
     ComboboxStatus,
-    PeopleAvatar
+    EmojiButton,
+    PeopleAvatar,
+    TaskTypeName
   },
 
   emits: [
@@ -379,7 +396,7 @@ export default {
 
   data() {
     return {
-      atOptions: [],
+      membersForAts: { '@': [], '#': [] },
       isDragging: false,
       errors: {
         addCommentAttachment: false
@@ -420,6 +437,10 @@ export default {
       default: () => {}
     },
     taskStatus: {
+      type: Array,
+      default: () => []
+    },
+    taskTypes: {
       type: Array,
       default: () => []
     },
@@ -483,6 +504,11 @@ export default {
         }
       })
     })
+    window.addEventListener('paste', this.onPaste, false)
+  },
+
+  beforeUnmount() {
+    window.removeEventListener('paste', this.onPaste, false)
   },
 
   computed: {
@@ -784,6 +810,20 @@ export default {
       this.isDragging = false
     },
 
+    /*
+     * When a file is pasted in the comment area, it adds it to the attachments.
+     */
+    onPaste(event) {
+      if (this.modals.addCommentAttachment) return
+      if (this.$refs['comment-textarea'] !== document.activeElement) return
+      const files = event.clipboardData.files
+      if (files.length > 0) {
+        const form = new FormData()
+        form.append('file', files[0])
+        this.addCommentAttachment([form])
+      }
+    },
+
     onAddCommentAttachmentClicked() {
       this.modals.addCommentAttachment = true
     },
@@ -834,6 +874,15 @@ export default {
       ).filter(Boolean)
     },
 
+    atOptionsFilter(name, chunk, at, v) {
+      // filter the list by the given at symbol
+      const option_at = v?.isTaskType ? '#' : '@'
+      // @ for team, # for task type
+      if (at !== option_at) return false
+      // match at lower-case
+      return name.toLowerCase().indexOf(chunk.toLowerCase()) > -1
+    },
+
     onAtTextChanged(input) {
       if (input.includes('@frame')) {
         this.text = replaceTimeWithTimecode(
@@ -855,6 +904,11 @@ export default {
 
     hideAnnotationLoading() {
       this.attachmentModal.hideAnnotationLoading()
+    },
+
+    onSelectEmoji(emoji) {
+      const textarea = this.$refs['comment-textarea']
+      this.text = strings.insertInTextArea(textarea, emoji.i)
     }
   },
 
@@ -893,20 +947,43 @@ export default {
       }
     },
 
+    taskTypes: {
+      deep: true,
+      immediate: true,
+      handler(values) {
+        const taskTypeOptions = values.map(taskType => {
+          return {
+            isTaskType: true,
+            full_name: taskType.name,
+            color: taskType.color,
+            id: taskType.id,
+            url: taskType.url
+          }
+        })
+        taskTypeOptions.push({
+          isTaskType: true,
+          color: '#000',
+          full_name: 'All'
+        })
+        this.membersForAts['#'] = taskTypeOptions
+      }
+    },
+
     team: {
       deep: true,
       immediate: true,
       handler() {
+        let teamOptions = []
         if (this.isCurrentUserClient) {
-          this.atOptions = [
-            ...this.team.filter(person =>
+          teamOptions = [
+            this.team.filter(person =>
               ['admin', 'manager', 'supervisor', 'client'].includes(person.role)
             )
           ]
         } else {
-          this.atOptions = [...this.team]
+          teamOptions = [...this.team]
         }
-        this.atOptions = this.atOptions.concat(
+        teamOptions = teamOptions.concat(
           this.productionDepartmentIds.map(departmentId => {
             const department = this.departmentMap.get(departmentId)
             return {
@@ -917,10 +994,12 @@ export default {
             }
           })
         )
-        this.atOptions.push({
+        teamOptions.push({
           isTime: true,
+          at: '@',
           full_name: 'frame'
         })
+        this.membersForAts['@'] = teamOptions
       }
     }
   }
@@ -1101,6 +1180,7 @@ article.add-comment {
 }
 
 .post-area {
+  position: relative;
   padding: 0 0.5em 0.2em 0.5em;
 }
 
@@ -1116,17 +1196,6 @@ article.add-comment {
   height: 5px;
   width: 100%;
   background-color: $light-green;
-}
-
-.button-row {
-  .button:hover {
-    transform: scale(1.2);
-    transition: transform 0.1s linear;
-
-    &.post-button:hover {
-      transform: none;
-    }
-  }
 }
 
 input[type='number']::-webkit-outer-spin-button,
