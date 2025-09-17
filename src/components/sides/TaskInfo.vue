@@ -21,6 +21,7 @@
         :team="currentTeam"
         @export-task="onExportClick"
         @set-frame-thumbnail="onSetCurrentFrameAsThumbnail"
+        @generate-pdf="onGeneratePDF"
       />
 
       <div
@@ -172,6 +173,7 @@
                   :frame="currentFrame || currentFrameRaw"
                   :revision="currentRevision"
                   :is-movie="isMoviePreview"
+                  :player="player"
                   @add-comment="addComment"
                   @add-preview="onAddPreviewClicked"
                   @file-drop="selectFile"
@@ -184,7 +186,9 @@
                 <div
                   class="comments"
                   v-if="
-                    taskComments && taskComments.length > 0 && !loading.task
+                    filteredTaskComments &&
+                    filteredTaskComments.length > 0 &&
+                    !loading.task
                   "
                 >
                   <XyzTransitionGroup
@@ -226,7 +230,7 @@
                       @delete-comment="onDeleteComment"
                       @checklist-updated="saveComment"
                       @time-code-clicked="timeCodeClicked"
-                      v-for="(comment, index) in taskComments"
+                      v-for="(comment, index) in filteredTaskComments"
                     />
                   </XyzTransitionGroup>
                 </div>
@@ -362,7 +366,7 @@ import PreviewPlayer from '@/components/previews/PreviewPlayer.vue'
 import Spinner from '@/components/widgets/Spinner.vue'
 import TaskTypeName from '@/components/widgets/TaskTypeName.vue'
 
-const DEFAULT_PANEL_WIDTH = 400
+const DEFAULT_PANEL_WIDTH = 800
 
 export default {
   name: 'task-info',
@@ -731,6 +735,31 @@ export default {
           : 0
     },
 
+    filteredTaskComments() {
+      if (!this.taskComments || this.taskComments.length === 0) {
+        return []
+      }
+
+      const currentRev = this.currentRevision
+
+      return this.taskComments.filter(comment => {
+        // Import the TIME_CODE_REGEX pattern from render.js
+        const timeCodeRegex = /v(\d+) (\d+:)?(\d+):(\d+)(\.|:)(\d+) \((\d+)\)/g
+        const matches = [...comment.text.matchAll(timeCodeRegex)]
+
+        // If comment has no version timestamps, show it (general comments)
+        if (matches.length === 0) {
+          return true
+        }
+
+        // Check if any version timestamp matches current revision
+        return matches.some(match => {
+          const commentRevision = parseInt(match[1]) // Extract version number
+          return commentRevision === currentRev
+        })
+      })
+    },
+
     extension() {
       const index = this.currentPreviewIndex
       return this.taskPreviews && this.taskPreviews.length > 0
@@ -876,6 +905,63 @@ export default {
             console.error(err)
             this.errors.task = true
           })
+      }
+    },
+
+    async onGeneratePDF() {
+      try {
+        if (this.selectedTasks.size === 0) {
+          console.warn('No tasks selected for PDF generation')
+          return
+        }
+
+        // Get the first selected task (we'll generate PDF for the first one)
+        const selectedTask = Array.from(this.selectedTasks.values())[0]
+
+        // Find the preview player component
+        const previewPlayer = this.$refs['preview-player']
+        if (!previewPlayer) {
+          console.error('Preview player not found')
+          return
+        }
+
+        // Load task comments if not already loaded
+        await this.loadTaskComments({
+          taskId: selectedTask.id,
+          entityId: selectedTask.entity_id
+        })
+
+        // Get the comments from the store
+        const taskComments = this.getTaskComments(selectedTask.id) || []
+
+        // Generate PDF using the preview player's method
+        const shotId = selectedTask.entity_id
+        const shotName = selectedTask.entity_name || 'Unknown Shot' // Get the shot name
+        const versionId = previewPlayer.currentPreview?.id || 'latest'
+        const versionName = previewPlayer.currentPreview?.revision
+          ? `v${previewPlayer.currentPreview.revision}`
+          : 'latest'
+
+        await previewPlayer.generateCommentsPDF(
+          shotId,
+          versionId,
+          taskComments,
+          shotName,
+          versionName
+        )
+
+        this.$notify({
+          type: 'success',
+          title: 'PDF Generated',
+          text: 'PDF with annotations has been generated successfully'
+        })
+      } catch (error) {
+        console.error('Error generating PDF:', error)
+        this.$notify({
+          type: 'error',
+          title: 'PDF Generation Failed',
+          text: 'Failed to generate PDF. Please try again.'
+        })
       }
     },
 

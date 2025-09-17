@@ -463,6 +463,10 @@ export default {
     previewForms: {
       type: Array,
       default: () => []
+    },
+    player: {
+      type: Object,
+      default: null
     }
   },
 
@@ -669,7 +673,29 @@ export default {
       } else {
         checklist = checklist.filter(item => item.text.length)
       }
-      text = replaceTimeWithTimecode(text, this.revision, this.time, this.fps)
+      // Auto-add @frame if user drew something but didn't manually add @frame
+      if (this.player && text && !text.includes('@frame')) {
+        const hasDrawings =
+          this.player.fabricCanvas &&
+          this.player.fabricCanvas.getObjects().length > 0
+
+        if (hasDrawings) {
+          // Use the standard @frame marker that gets converted by replaceTimeWithTimecode
+          text = '@frame ' + text
+        }
+      }
+
+      // Use player's current frame if available, fallback to this.time
+      const currentFrame = this.player
+        ? (this.player.currentFrame || 0) + 1
+        : this.frame
+
+      text = replaceTimeWithTimecode(
+        text,
+        this.revision,
+        currentFrame,
+        this.fps
+      )
 
       revision = Number(revision)
       if (isNaN(revision) || revision < 1) {

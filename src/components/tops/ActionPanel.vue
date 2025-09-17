@@ -157,6 +157,28 @@
         </div>
 
         <div
+          class="menu-item"
+          :class="{
+            active: selectedBar === 'generate-pdf'
+          }"
+          :title="$t('menu.generate_pdf')"
+          v-if="
+            isCurrentViewShot &&
+            !isEntitySelection &&
+            !isCurrentViewSingleEntity &&
+            isTaskSelection &&
+            nbSelectedTasks > 0
+          "
+          @click="selectBar('generate-pdf')"
+        >
+          <kitsu-icon
+            name="pdf"
+            :active="selectedBar === 'generate-pdf'"
+            :title="$t('menu.generate_pdf')"
+          />
+        </div>
+
+        <div
           v-if="
             (isCurrentViewAsset ||
               isCurrentViewShot ||
@@ -890,7 +912,7 @@ export default {
     XIcon
   },
 
-  emits: ['export-task', 'set-frame-thumbnail'],
+  emits: ['export-task', 'set-frame-thumbnail', 'generate-pdf'],
 
   data() {
     return {
@@ -1558,6 +1580,12 @@ export default {
         this.selectedBar = barName
       } else {
         this.selectedBar = ''
+      }
+
+      // Handle PDF generation
+      if (barName === 'generate-pdf') {
+        this.$emit('generate-pdf')
+        this.selectedBar = '' // Reset selection after action
       }
     },
 

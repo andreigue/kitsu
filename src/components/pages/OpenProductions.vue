@@ -1,5 +1,18 @@
 <template>
   <div class="open-productions page">
+    <!-- VERSION BANNER -->
+    <div
+      style="
+        background: rgb(229, 83, 255);
+        color: white;
+        padding: 8px;
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 10px;
+      "
+    >
+      🎯 v9.0 - PDF Generation 🎯
+    </div>
     <div class="social-contributions" v-if="isContributions">
       <h1 class="subtitle has-text-centered">
         {{ $t('intro.title') }}
