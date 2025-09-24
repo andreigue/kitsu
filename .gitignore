@@ -54,3 +54,8 @@ tests/test-bundle.js
 # Custom
 TODO
 QA
+
+# Environment variables
+.env
+.env.local
+.env.*.local
