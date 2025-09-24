@@ -66,8 +66,8 @@
             </ul>
           </div>
 
-          <div class="flexcolumn-item flexrow search-options mb1">
-            <div class="flexrow-item">
+          <div class="flexcolumn-item flexrow align-start mb1">
+            <div class="flexrow-item search-options">
               <search-field
                 ref="task-search-field"
                 :can-save="true"
@@ -82,6 +82,7 @@
                 class="flexrow-item selector"
                 :label="$t('news.task_status')"
                 :task-status-list="taskStatusList"
+                :with-margin="false"
                 v-model="taskStatusIdFilter"
               />
               <combobox-styled
@@ -120,6 +121,36 @@
                 v-model="difficultyFilter"
               />
             </div>
+
+            <div
+              class="flexrow-item flexrow align-start ml1"
+              v-if="isActiveTab('schedule')"
+            >
+              <div class="flexrow-item field ml1">
+                <label class="label">
+                  {{ $t('tasks.data_display') }}
+                </label>
+                <div class="mt05 nowrap">
+                  <label class="label">
+                    <input type="checkbox" v-model="dataDisplay.estimations" />
+                    {{ $t('tasks.fields.estimation') }}
+                  </label>
+                  <label class="label">
+                    <input type="checkbox" v-model="dataDisplay.statuses" />
+                    {{ $t('tasks.fields.task_status') }}
+                  </label>
+                  <label class="label">
+                    <input
+                      type="checkbox"
+                      v-model="dataDisplay.timesheets"
+                      @change="onTimesheetsDisplayChange"
+                    />
+                    {{ $t('tasks.fields.timesheets') }}
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div class="filler"></div>
             <div class="flexrow-item" v-if="isActiveTab('tasks')">
               <combobox-styled
@@ -178,7 +209,7 @@
             </div>
             <div class="flexrow-item zoom-level" v-if="isActiveTab('schedule')">
               <combobox-number
-                class="mt0"
+                class="mt0 nowrap"
                 :label="$t('schedule.zoom_level')"
                 :options="schedule.zoomOptions"
                 no-field
@@ -225,6 +256,9 @@
             :height="schedule.scheduleHeight"
             :is-loading="loading.entities"
             :is-estimation-linked="true"
+            :with-estimations="dataDisplay.estimations"
+            :with-statuses="dataDisplay.statuses"
+            :with-timesheets="dataDisplay.timesheets"
             @item-changed="saveTaskScheduleItem"
             @root-element-expanded="expandPersonElement"
             @estimation-changed="updateEstimation"
@@ -465,11 +499,17 @@ export default {
   data() {
     return {
       activeTab: 'tasks',
-      daysOffByPerson: [],
+      daysOffByPerson: {},
+      timesheetByPerson: {},
       currentSort: 'entity_name',
       currentScheduleItem: null,
       currentTask: null,
       contactSheetMode: false,
+      dataDisplay: {
+        estimations: true,
+        statuses: true,
+        timesheets: false
+      },
       dataMatchers: ['Parent', 'Entity'],
       difficultyFilter: '-1',
       dueDateFilter: 'all',
@@ -832,6 +872,7 @@ export default {
       'initTaskType',
       'loadAggregatedPersonDaysOff',
       'loadEpisodeScheduleItems',
+      'loadPersonTimeSpentsByPeriod',
       'loadScheduleItems',
       'removeTaskSearch',
       'saveScheduleItem',
@@ -1218,32 +1259,38 @@ export default {
     updateEstimation({ taskId, days, item, daysOff }) {
       const estimation = daysToMinutes(this.organisation, days)
       const task = this.taskMap.get(taskId)
-      let data = { estimation }
       if (!task.start_date) task.start_date = formatSimpleDate(moment())
       const startDate = parseDate(task.start_date)
       const dueDate = task.due_date ? parseDate(task.due_date) : null
-      data = getDatesFromStartDate(
-        this.organisation,
-        startDate,
-        dueDate,
-        minutesToDays(this.organisation, estimation),
-        daysOff
-      )
-      data.estimation = estimation
-      if (item) {
-        item.start_date = data.start_date
-        item.startDate = parseDate(data.start_date)
-        item.end_date = data.due_date
-        item.endDate = parseDate(data.due_date)
+      const data = {
+        ...getDatesFromStartDate(
+          this.organisation,
+          startDate,
+          dueDate,
+          minutesToDays(this.organisation, estimation),
+          daysOff
+        ),
+        estimation
       }
-      if (item && item.startDate && item.endDate) {
-        item.parentElement.startDate = this.getMinDate(item.parentElement)
-        item.parentElement.endDate = this.getMaxDate(item.parentElement)
+      if (item) {
+        item.startDate = parseDate(data.start_date)
+        item.endDate = parseDate(data.due_date)
+
+        if (item.startDate && item.endDate) {
+          item.parentElement.startDate = this.getMinDate(item.parentElement)
+          item.parentElement.endDate = this.getMaxDate(item.parentElement)
+        }
       }
       this.updateTask({ taskId, data }).catch(console.error)
     },
 
     // Schedule
+
+    onTimesheetsDisplayChange() {
+      if (this.dataDisplay.timesheets) {
+        this.resetScheduleItems()
+      }
+    },
 
     async resetScheduleItems() {
       const taskAssignationMap = this.buildAssignationMap()
@@ -1252,6 +1299,12 @@ export default {
         id => id !== 'unassigned' && taskAssignationMap[id].length > 0
       )
       await this.loadDaysOff(assignees)
+
+      if (this.currentScheduleItem && this.dataDisplay.timesheets) {
+        const startDate = this.currentScheduleItem.start_date
+        const endDate = this.currentScheduleItem.end_date
+        await this.loadTimesheets(assignees, startDate, endDate)
+      }
 
       const scheduleItems = this.team
         .map(person => this.buildPersonElement(person, taskAssignationMap))
@@ -1287,7 +1340,7 @@ export default {
     },
 
     async loadDaysOff(personIds) {
-      this.daysOffByPerson = []
+      this.daysOffByPerson = {}
       for (const personId of personIds) {
         // load sequentially to avoid too many requests
         const daysOff = await this.loadAggregatedPersonDaysOff({
@@ -1296,6 +1349,49 @@ export default {
           () => [] // fallback if not allowed to fetch days off
         )
         this.daysOffByPerson[personId] = daysOff
+      }
+    },
+
+    async loadTimesheets(personIds, startDate, endDate) {
+      this.timesheetByPerson = {}
+      for (const personId of personIds) {
+        // load sequentially to avoid too many requests
+        const timesheet = await this.loadPersonTimeSpentsByPeriod({
+          personId,
+          startDate,
+          endDate
+        }).catch(
+          () => [] // fallback if not allowed to fetch timesheets
+        )
+        timesheet.forEach(entry => {
+          entry.task = this.tasks.find(task => task.id === entry.task_id)
+          entry.startDate = parseDate(entry.date)
+          entry.endDate = parseDate(entry.date)
+        })
+
+        // merge consecutive timesheet entries with duration >= one organisation day
+        const mergedTimesheet = []
+        const oneDay = this.organisation.hours_by_day * 60
+        for (const entry of timesheet) {
+          const previous = mergedTimesheet.length
+            ? mergedTimesheet[mergedTimesheet.length - 1]
+            : null
+          if (
+            previous?.duration >= oneDay &&
+            entry.startDate.diff(previous.startDate, 'days') === 1
+          ) {
+            // merge with previous
+            mergedTimesheet[mergedTimesheet.length - 1] = {
+              ...previous,
+              duration: previous.duration + entry.duration,
+              endDate: entry.endDate
+            }
+          } else {
+            mergedTimesheet.push(entry)
+          }
+        }
+
+        this.timesheetByPerson[personId] = mergedTimesheet
       }
     },
 
@@ -1318,7 +1414,8 @@ export default {
           expanded: true,
           loading: false,
           children: [],
-          editable: false
+          editable: false,
+          timesheet: []
         }
       } else {
         personElement = {
@@ -1335,6 +1432,7 @@ export default {
           children: [],
           editable: false,
           daysOff: this.daysOffByPerson[person.id],
+          timesheet: this.timesheetByPerson[person.id],
           route: getPersonPath(person.id, 'schedule')
         }
       }
@@ -1732,8 +1830,16 @@ export default {
   margin-right: 0;
 }
 
+.align-start {
+  align-items: flex-start;
+}
+
 .search-options {
-  align-items: flex-end;
+  margin-top: 23px;
+}
+
+.ml2 {
+  margin-left: 2em;
 }
 
 .tabs ul {
