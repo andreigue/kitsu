@@ -40,6 +40,12 @@
           v-model.trim="form.phone"
           v-if="!isBot"
         />
+        <text-field
+          :label="$t('people.fields.telegram_chat_id')"
+          v-model.trim="form.telegram_chat_id"
+          v-if="!isBot"
+          :placeholder="$t('people.fields.telegram_chat_id_placeholder')"
+        />
         <date-field
           :label="$t('bots.fields.expiration_date')"
           :min-date="today"
@@ -297,6 +303,7 @@ export default {
         last_name: '',
         email: '',
         phone: '',
+        telegram_chat_id: '',
         role: 'user',
         position: 'artist',
         seniority: 'mid',
@@ -414,6 +421,7 @@ export default {
           last_name: this.personToEdit.last_name,
           email: this.personToEdit.email,
           phone: this.personToEdit.phone,
+          telegram_chat_id: this.personToEdit.telegram_chat_id || '',
           role: this.personToEdit.role,
           position: this.personToEdit.position,
           seniority: this.personToEdit.seniority,

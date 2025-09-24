@@ -3,7 +3,7 @@
     <!-- VERSION BANNER -->
     <div
       style="
-        background: rgb(126, 0, 148);
+        background: rgb(255, 139, 139);
         color: white;
         padding: 8px;
         text-align: center;
@@ -11,7 +11,7 @@
         margin-bottom: 10px;
       "
     >
-      🎯 v9.0 - PDF Generation 🎯
+      🎯 v10.0 - Telegram Notification Bot 🎯
     </div>
     <div class="social-contributions" v-if="isContributions">
       <h1 class="subtitle has-text-centered">

@@ -163,7 +163,7 @@ const getters = {
 }
 
 const actions = {
-  saveProfile({ commit, state }, payload) {
+    saveProfile({ commit, state }, payload) {
     commit(USER_SAVE_PROFILE_LOADING)
     peopleApi
       .updatePerson(payload.form)

@@ -3,6 +3,8 @@ import async from 'async'
 import tasksApi from '@/store/api/tasks'
 import peopleApi from '@/store/api/people'
 import playlistsApi from '@/store/api/playlists'
+import telegramService from '@/lib/telegram'
+import TelegramSettings from '@/lib/telegram-settings'
 import {
   sortComments,
   sortRevisionPreviewFiles,
@@ -677,10 +679,40 @@ const actions = {
     })
   },
 
-  assignSelectedTasks({ commit, state }, { personId, taskIds }) {
+  assignSelectedTasks({ commit, state, rootGetters }, { personId, taskIds }) {
     const selectedTaskIds = taskIds || Array.from(state.selectedTasks.keys())
     return tasksApi.assignTasks(personId, selectedTaskIds).then(() => {
       commit(ASSIGN_TASKS, { selectedTaskIds, personId })
+
+      // Send Telegram notifications for each assigned task
+      const person = rootGetters.getPerson(personId)
+      const production = rootGetters.currentProduction
+
+      // Check if person has Telegram notifications enabled and has a chat ID
+      const telegramSettings = TelegramSettings.getUserSettings(personId)
+      const hasTelegramEnabled = telegramSettings.notifications_telegram_enabled
+      const telegramChatId =
+        telegramSettings.notifications_telegram_chat_id ||
+        person.telegram_chat_id
+
+      if (person && production && hasTelegramEnabled && telegramChatId) {
+        selectedTaskIds.forEach(taskId => {
+          const task = state.taskMap.get(taskId)
+          if (task) {
+            // Add Telegram settings to person object for the notification
+            const personWithTelegram = {
+              ...person,
+              notifications_telegram_enabled: hasTelegramEnabled,
+              notifications_telegram_chat_id: telegramChatId
+            }
+            telegramService.sendTaskAssignmentNotification(
+              personWithTelegram,
+              task,
+              production
+            )
+          }
+        })
+      }
     })
   },
 

@@ -96,6 +96,11 @@
             <em>{{ $t('settings.webhook_error') }}</em>
           </div>
         </div>
+
+        <telegram-settings />
+
+        <telegram-test />
+
         <button
           class="button save-button is-medium"
           :class="{
@@ -128,6 +133,8 @@ import { mapGetters, mapActions } from 'vuex'
 import ChangeAvatarModal from '@/components/modals/ChangeAvatarModal.vue'
 import ComboboxBoolean from '@/components/widgets/ComboboxBoolean.vue'
 import TextField from '@/components/widgets/TextField.vue'
+import TelegramSettings from '@/components/widgets/TelegramSettings.vue'
+import TelegramTest from '@/components/widgets/TelegramTest.vue'
 
 export default {
   name: 'settings',
@@ -135,7 +142,9 @@ export default {
   components: {
     ChangeAvatarModal,
     ComboboxBoolean,
-    TextField
+    TextField,
+    TelegramSettings,
+    TelegramTest
   },
 
   data() {
