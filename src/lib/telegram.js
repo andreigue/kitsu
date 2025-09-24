@@ -21,34 +21,38 @@ class TelegramService {
    * @returns {Promise} - API response
    */
   async sendMessage(chatId, message) {
+    console.log('📡 Bot token configured:', !!TELEGRAM_BOT_TOKEN)
     if (!TELEGRAM_BOT_TOKEN) {
       console.warn('Cannot send Telegram message: bot token not configured')
       return null
     }
 
     try {
-      const response = await fetch(
-        `${TELEGRAM_API_BASE}${TELEGRAM_BOT_TOKEN}/sendMessage`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: message,
-            parse_mode: 'HTML'
-          })
-        }
-      )
+      const url = `${TELEGRAM_API_BASE}${TELEGRAM_BOT_TOKEN}/sendMessage`
+      console.log('🚀 Sending to URL:', url)
+      console.log('📋 Payload:', { chat_id: chatId, text: message })
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      })
 
       const result = await response.json()
+      console.log('📥 Telegram API response:', result)
 
       if (!result.ok) {
         console.error('Telegram API error:', result.description)
         return null
       }
 
+      console.log('✅ Message sent successfully!')
       return result
     } catch (error) {
       console.error('Failed to send Telegram message:', error)
@@ -64,13 +68,22 @@ class TelegramService {
    * @returns {Promise} - API response
    */
   async sendTaskAssignmentNotification(person, task, production) {
-    if (!person.telegram_chat_id) {
+    console.log('🔔 Attempting to send Telegram notification:', {
+      person: person.full_name,
+      chat_id: person.notifications_telegram_chat_id || person.telegram_chat_id,
+      telegram_enabled: person.notifications_telegram_enabled,
+      task: task.full_name || task.name
+    })
+    
+    const chatId = person.notifications_telegram_chat_id || person.telegram_chat_id
+    if (!chatId) {
       console.log(`No Telegram chat ID for person ${person.full_name}`)
       return null
     }
 
     const message = this.formatTaskAssignmentMessage(person, task, production)
-    return this.sendMessage(person.telegram_chat_id, message)
+    console.log('📨 Sending message:', message)
+    return this.sendMessage(chatId, message)
   }
 
   /**
