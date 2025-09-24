@@ -102,6 +102,10 @@ export default {
       departments: person.departments,
       studio_id: person.studio_id
     }
+    
+    console.log('📤 API payload being sent:', data)
+    console.log('📝 Original person object keys:', Object.keys(person))
+    
     return client.pput(`/api/data/persons/${person.id}`, data)
   },
 

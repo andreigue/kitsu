@@ -4,6 +4,7 @@ import tasksApi from '@/store/api/tasks'
 import peopleApi from '@/store/api/people'
 import playlistsApi from '@/store/api/playlists'
 import telegramService from '@/lib/telegram'
+import TelegramSettings from '@/lib/telegram-settings'
 import {
   sortComments,
   sortRevisionPreviewFiles,
@@ -688,17 +689,27 @@ const actions = {
       const production = rootGetters.currentProduction
 
       // Check if person has Telegram notifications enabled and has a chat ID
+      const telegramSettings = TelegramSettings.getUserSettings(personId)
+      const hasTelegramEnabled = telegramSettings.notifications_telegram_enabled
+      const telegramChatId = telegramSettings.notifications_telegram_chat_id || person.telegram_chat_id
+      
       if (
         person &&
         production &&
-        person.notifications_telegram_enabled === 'true' &&
-        person.notifications_telegram_chat_id
+        hasTelegramEnabled &&
+        telegramChatId
       ) {
         selectedTaskIds.forEach(taskId => {
           const task = state.taskMap.get(taskId)
           if (task) {
+            // Add Telegram settings to person object for the notification
+            const personWithTelegram = {
+              ...person,
+              notifications_telegram_enabled: hasTelegramEnabled,
+              notifications_telegram_chat_id: telegramChatId
+            }
             telegramService.sendTaskAssignmentNotification(
-              person,
+              personWithTelegram,
               task,
               production
             )
