@@ -856,6 +856,7 @@ import {
 } from 'lucide-vue-next'
 import { mapGetters, mapActions } from 'vuex'
 
+import assetsStore from '@/store/modules/assets.js'
 import { intersection } from '@/lib/array'
 import func from '@/lib/func'
 
@@ -922,7 +923,6 @@ export default {
       person: null,
       priority: '0',
       selectedBar: '',
-      selectedTaskIds: [],
       taskStatusId: '',
       statusComment: '',
       modals: {
@@ -983,7 +983,6 @@ export default {
 
   computed: {
     ...mapGetters([
-      'assetMap',
       'assetsByType',
       'currentProduction',
       'getCustomActionsByType',
@@ -1004,6 +1003,10 @@ export default {
       'taskTypeMap',
       'user'
     ]),
+
+    assetMap() {
+      return assetsStore.cache.assetMap
+    },
 
     minimized() {
       return this.selectedBar === ''
@@ -1205,6 +1208,10 @@ export default {
 
     selectedPersonId() {
       return this.person ? this.person.id : null
+    },
+
+    selectedTaskIds() {
+      return Array.from(this.selectedTasks.keys())
     },
 
     isInDepartment() {
@@ -1755,13 +1762,8 @@ export default {
       }
     },
 
-    selectedTasks() {
-      this.selectedTaskIds = Array.from(this.selectedTasks.keys())
-    },
-
     $route(oldRoute, newRoute) {
       if (oldRoute.name !== newRoute.name) {
-        this.selectedTaskIds = Array.from(this.selectedTasks.keys())
         if (this.nbSelectedTasks > 0) {
           this.clearSelectedTasks()
         }
