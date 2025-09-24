@@ -691,14 +691,11 @@ const actions = {
       // Check if person has Telegram notifications enabled and has a chat ID
       const telegramSettings = TelegramSettings.getUserSettings(personId)
       const hasTelegramEnabled = telegramSettings.notifications_telegram_enabled
-      const telegramChatId = telegramSettings.notifications_telegram_chat_id || person.telegram_chat_id
-      
-      if (
-        person &&
-        production &&
-        hasTelegramEnabled &&
-        telegramChatId
-      ) {
+      const telegramChatId =
+        telegramSettings.notifications_telegram_chat_id ||
+        person.telegram_chat_id
+
+      if (person && production && hasTelegramEnabled && telegramChatId) {
         selectedTaskIds.forEach(taskId => {
           const task = state.taskMap.get(taskId)
           if (task) {

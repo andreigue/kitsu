@@ -163,14 +163,8 @@ const getters = {
 }
 
 const actions = {
-  saveProfile({ commit, state }, payload) {
+    saveProfile({ commit, state }, payload) {
     commit(USER_SAVE_PROFILE_LOADING)
-    console.log('🔄 saveProfile called with:', payload.form)
-    console.log('🔍 Checking for Telegram fields:', {
-      has_telegram_enabled: 'notifications_telegram_enabled' in payload.form,
-      has_telegram_chat_id: 'notifications_telegram_chat_id' in payload.form
-    })
-    
     peopleApi
       .updatePerson(payload.form)
       .then(() => {
@@ -178,8 +172,7 @@ const actions = {
         commit(USER_SAVE_PROFILE_SUCCESS, payload.form)
       })
       .catch(err => {
-        console.error('🚨 saveProfile API error:', err)
-        console.error('🚨 Error response:', err.response?.data)
+        console.error(err)
         commit(USER_SAVE_PROFILE_ERROR)
       })
   },
