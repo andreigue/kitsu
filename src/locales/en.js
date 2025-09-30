@@ -1820,6 +1820,7 @@ export default {
     fields: {
       asset_type: 'Asset type',
       assignees: 'Assignees',
+      before_after_tasks: 'Before/After Tasks',
       count: 'Count',
       difficulty: 'Difficulty',
       done_date: 'Approval date',
@@ -1835,6 +1836,7 @@ export default {
       last_comment: 'Last comment',
       last_comment_date: 'Last comment',
       nb_frames: 'Frames',
+      no_task_type: 'No task type',
       parent: 'Parent',
       priority: 'Priority',
       production: 'Prod',
@@ -1848,6 +1850,8 @@ export default {
       task_status: 'Status',
       task_status_short_name: 'Status',
       task_type: 'Type',
+      tasks_after: 'Tasks after',
+      tasks_before: 'Tasks before',
       timesheets: 'Timesheets'
     },
     colors: {
