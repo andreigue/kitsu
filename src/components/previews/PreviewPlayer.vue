@@ -1872,6 +1872,25 @@ export default {
         const pageWidth = pdf.internal.pageSize.getWidth()
         const pageHeight = pdf.internal.pageSize.getHeight()
 
+        // Filter comments by current version - parse version from comment text
+        const versionFilteredComments = taskComments.filter(comment => {
+          // Check if comment text contains version information like "v1", "v2", etc.
+          if (comment.text) {
+            // Look for version pattern like "v1", "v2", "v3" at the beginning of comment text
+            const versionMatch = comment.text.match(/^v(\d+)\s/)
+            if (versionMatch) {
+              const commentVersion = parseInt(versionMatch[1])
+              // Get the current version number from the current preview
+              const currentVersion = this.currentPreview?.revision || 1
+              console.log(`Comment version: v${commentVersion}, Current version: v${currentVersion}`)
+              return commentVersion === currentVersion
+            }
+          }
+          
+          // If no version info in text, include the comment (might be a general comment)
+          return true
+        })
+
         // Get annotations sorted by frame
         const annotations = this.annotations.sort((a, b) => {
           return parseInt(a.frame) - parseInt(b.frame)
@@ -1914,10 +1933,10 @@ export default {
           pdf.addImage(imageData, 'PNG', 20, currentY, imgWidth, imgHeight)
           currentY += imgHeight + 15
 
-          // Get comments that reference this frame
+          // Get comments that reference this frame (using version-filtered comments)
           const frameComments = this.getCommentsForFrame(
             annotation.frame,
-            taskComments
+            versionFilteredComments
           )
 
           // Debug logging
@@ -2052,13 +2071,22 @@ export default {
         pdf.setFont('helvetica', 'normal')
         pdf.text('─'.repeat(30), 20, 45)
 
-        // Filter comments by current version
+        // Filter comments by current version - parse version from comment text
         const versionComments = taskComments.filter(comment => {
-          // Check if comment has previews for the current version
-          if (comment.previews && comment.previews.length > 0) {
-            return comment.previews.some(preview => preview.id === versionId)
+          // Check if comment text contains version information like "v1", "v2", etc.
+          if (comment.text) {
+            // Look for version pattern like "v1", "v2", "v3" at the beginning of comment text
+            const versionMatch = comment.text.match(/^v(\d+)\s/)
+            if (versionMatch) {
+              const commentVersion = parseInt(versionMatch[1])
+              // Get the current version number from the current preview
+              const currentVersion = this.currentPreview?.revision || 1
+              console.log(`Comment version: v${commentVersion}, Current version: v${currentVersion}`)
+              return commentVersion === currentVersion
+            }
           }
-          // If no previews, include the comment (it might be a general comment)
+          
+          // If no version info in text, include the comment (might be a general comment)
           return true
         })
 
