@@ -995,12 +995,22 @@ export default {
           : this.currentPreview
         // find real preview, which contains the `revision`
         preview = this.taskPreviews.find(p => p.id === preview.id)
+        
+        // Automatically prepend version information to comments for version tracking
+        let versionedComment = comment
+        if (preview && preview.revision && comment && comment.trim()) {
+          // Only add version prefix if the comment doesn't already have one
+          if (!comment.match(/^v\d+\s/)) {
+            versionedComment = `v${preview.revision} ${comment}`
+          }
+        }
+        
         const params = {
           taskId: this.task.id,
           taskStatusId,
           attachment,
           checklist,
-          comment,
+          comment: versionedComment,
           links: link ? [link] : null,
           revision
         }
