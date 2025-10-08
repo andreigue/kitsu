@@ -2161,10 +2161,15 @@ export default {
 
         // If we have annotations, use them as the primary source for frames
         if (versionAnnotations.length > 0) {
+          // Always start frame content on a new page (whether we had general comments or not)
+          if (generalComments.length === 0) {
+            pdf.addPage()
+          }
+          
           for (let i = 0; i < versionAnnotations.length; i++) {
             const annotation = versionAnnotations[i]
 
-            // Start new page for each frame (except first page)
+            // Start new page for each frame (except first frame page)
             if (i > 0) {
               pdf.addPage()
             }
